@@ -1,3 +1,7 @@
+/*
+    调用sbi接口，提供单字符输出能力
+*/
+
 #ifndef CONSOLE_H
 #define CONSOLE_H
 

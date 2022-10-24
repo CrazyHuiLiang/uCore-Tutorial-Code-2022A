@@ -26,3 +26,17 @@ git clone git@github.com:LearningOS/uCore-Tutorial-Test-2022A.git user
 ```
 
 注意：`user` 已添加至 `.gitignore`，你无需将其提交，ci 也不会使用它
+
+
+目录结构
+
+```
+bootloader 内核依赖的运行在M特权级的SBI实现
+os 内核实现存放的目录
+    console 将打印字符的 SBI 接口进一步封装实现更加强大的格式化输出
+    entry   设置内核执行环境的一段汇编代码
+    main    内核主函数
+    sbi     调用底层SBI实现提供的SBI接口
+```
+
+

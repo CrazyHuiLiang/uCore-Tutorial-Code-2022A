@@ -1,13 +1,19 @@
+# 定义虚目标
 .PHONY: clean build user
+# 默认第一个目标为 build
 all: build_kernel
 
+# 如果LOG等级没有被定义，则将其定义为error
 LOG ?= error
 
 K = os
 
 TOOLPREFIX = riscv64-unknown-elf-
+# 编译器为gcc
 CC = $(TOOLPREFIX)gcc
+# 汇编器使用gcc
 AS = $(TOOLPREFIX)gcc
+# 链接器使用ld
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
@@ -16,15 +22,23 @@ GDB = $(TOOLPREFIX)gdb
 CP = cp
 MKDIR_P = mkdir -p
 
+# 构建产出目录
 BUILDDIR = build
+# os目录下所有的.c文件
 C_SRCS = $(wildcard $K/*.c)
+# os目录下所有的.S文件
 AS_SRCS = $(wildcard $K/*.S)
+# 将所有构建出来的.o文件置于 build/os/
 C_OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(C_SRCS))))
+# 将汇编构建出来的.o文件置于 build/os/
 AS_OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(AS_SRCS))))
+# 所有的构建出来的 .o 文件
 OBJS = $(C_OBJS) $(AS_OBJS)
 
+# 依据.c文件 计算出其依赖项，保存至同名 .d 文件
 HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
+# 将.d文件（伪目标）都导入
 -include $(HEADER_DEP)
 
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
@@ -56,14 +70,17 @@ endif
 
 LDFLAGS = -z max-page-size=4096
 
+# 构建 os/ 所有的 .S文件
 $(AS_OBJS): $(BUILDDIR)/$K/%.o : $K/%.S
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# 构建 os/ 所有的 .c 文件
 $(C_OBJS): $(BUILDDIR)/$K/%.o : $K/%.c  $(BUILDDIR)/$K/%.d
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# 根据 os/ 下的.c 生成 .d
 $(HEADER_DEP): $(BUILDDIR)/$K/%.d : $K/%.c
 	@mkdir -p $(@D)
 	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDEFLAGS) > $@.$$$$; \
@@ -72,6 +89,9 @@ $(HEADER_DEP): $(BUILDDIR)/$K/%.d : $K/%.c
 
 build: build/kernel
 
+# 构建
+# 依赖所有的.c 和 .S 的构建（make会隐含的自动构建）
+# 链接、输出汇编代码
 build/kernel: $(OBJS)
 	$(LD) $(LDFLAGS) -T os/kernel.ld -o $(BUILDDIR)/kernel $(OBJS)
 	$(OBJDUMP) -S $(BUILDDIR)/kernel > $(BUILDDIR)/kernel.asm
@@ -86,6 +106,10 @@ BOARD		?= qemu
 SBI			?= rustsbi
 BOOTLOADER	:= ./bootloader/rustsbi-qemu.bin
 
+
+# -nographic 表示模拟器不使用图形界面，只需要对外输出字符流
+# -machine virt 计算机设置名为virt
+# -bios 设置 qemu 模拟器开机时用来初始化的引导加载程序(bootloader)
 QEMU = qemu-system-riscv64
 QEMUOPTS = \
 	-nographic \
@@ -93,6 +117,7 @@ QEMUOPTS = \
 	-bios $(BOOTLOADER) \
 	-kernel build/kernel	\
 
+# 依赖 build/kernel
 run: build/kernel
 	$(QEMU) $(QEMUOPTS)
 
