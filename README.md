@@ -39,4 +39,25 @@ os 内核实现存放的目录
     sbi     调用底层SBI实现提供的SBI接口
 ```
 
+## 总结理解
+
+项目使用了汇编和c语言两种编程语言共同编写，使用makefile进行管理编译和链接过程，使用 riscv64-unknown-elf-gcc 进行交叉编译（在x86指令集架构之上编译riscv指令集架构的目标文件），riscv64-unknown-elf-ld进行链接。
+
+对于部分特权指令的使用以及对sbi的调用只能使用汇编来写，这部分内容以内联汇编的形式写在riskv.h 和 sbi.c 文件中。
+
+console.c 对 sbi.c 提供的字符输出能力进行一层间接的封装，当前并没有能力上的新增
+
+printf.c 使用 console.c 的能力进一步提供了格式化输出函数 printf
+
+log.c 基于printf.c 进一步提供了不同颜色/不同日志等级的输出函数
+
+main.c 利用 printf,以及log.c中提供的输出函数进行字符串打印
+
+entry.S 定义了 stack 空间，以及定义了 程序入口标签_entry，在_entry 中跳转main函数
+
+kernel.ld 为链接项目的脚本，决定了elf程序的内存空间布局，定义了链接时的起始地址（0x80200000，此地址有rustsbi），设置入口地址为 entry.S 中定义的 _entry
+
+另外，因为是在写操作系统内核而不是应用层软件，输出字符无法使用c标准库中的printf，需要使用我们自己基于sbi的实现，因此在编译源代码时需要设置 -nostdlib 来移除c标准库的依赖。
+
+使用rustsbi作为 bios，链接生成的可执行文件作为内核，使用qemu-system-riscv64 来加载和执行。
 
